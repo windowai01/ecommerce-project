@@ -48,4 +48,11 @@ public class OrderController {
       return ResponseEntity.status(404).body(Map.of("error", "Order not found!"));
     }
   }
+
+  // UPDATE ORDER
+  @PutMapping("/update/{id}")
+  public ResponseEntity<Map<String, Object>> updateOrder(@PathVariable Long id, @RequestBody OrderRequest req) {
+    Map<String, Object> response = orderService.updateOrderWithDetails(id, req);
+    return ResponseEntity.ok(response);
+  }
 }

@@ -18,7 +18,7 @@ public class OrderService {
         this.orderRepo = orderRepo;
     }
 
-    // ✅ CREATE ORDER WITH DETAILED RESPONSE
+    // CREATE ORDER WITH DETAILED RESPONSE
     @Transactional
     public Map<String, Object> createOrderWithDetails(OrderRequest req) {
         Order order = new Order();
@@ -53,8 +53,7 @@ public class OrderService {
                     "productName", p.getName(),
                     "price", p.getPrice(),
                     "quantity", it.quantity,
-                    "subtotal", subtotal
-            ));
+                    "subtotal", subtotal));
         }
 
         order.setItems(items);
@@ -65,21 +64,20 @@ public class OrderService {
                 "orderId", saved.getId(),
                 "message", "Order created successfully!",
                 "total", total,
-                "products", productDetails
-        );
+                "products", productDetails);
     }
 
-    // ✅ GET ALL ORDERS
+    // GET ALL ORDERS
     public List<Order> getAllOrders() {
         return orderRepo.findAll();
     }
 
-    // ✅ GET ONE ORDER
+    // GET ONE ORDER
     public Optional<Order> getOrderById(Long id) {
         return orderRepo.findById(id);
     }
 
-    // ✅ DELETE ORDER
+    // DELETE ORDER
     @Transactional
     public boolean deleteOrder(Long id) {
         if (orderRepo.existsById(id)) {
@@ -88,4 +86,74 @@ public class OrderService {
         }
         return false;
     }
+
+    // UPDATE ORDER
+    @Transactional
+    public Map<String, Object> updateOrderWithDetails(Long id, OrderRequest req) {
+        // Find the order
+        Order order = orderRepo.findById(id)
+                .orElseThrow(() -> new RuntimeException("Order not found with id: " + id));
+
+        // Restore stock for old items
+        if (order.getItems() != null) {
+            for (OrderItem oldItem : order.getItems()) {
+                Product oldProduct = oldItem.getProduct();
+                if (oldProduct != null) {
+                    oldProduct.setQuantity(oldProduct.getQuantity() + oldItem.getQuantity());
+                    productRepo.save(oldProduct);
+                }
+            }
+        }
+
+        // Clear old items
+        order.getItems().clear();
+
+        BigDecimal total = BigDecimal.ZERO;
+        List<Map<String, Object>> productDetails = new ArrayList<>();
+
+        // Add new items
+        for (OrderRequest.Item it : req.items) {
+            Product product = productRepo.findById(it.productId)
+                    .orElseThrow(() -> new RuntimeException("Product not found: " + it.productId));
+
+            if (product.getQuantity() < it.quantity) {
+                throw new RuntimeException("Not enough stock for product: " + product.getName());
+            }
+
+            // decrease stock
+            product.setQuantity(product.getQuantity() - it.quantity);
+            productRepo.save(product);
+
+            OrderItem newItem = new OrderItem();
+            newItem.setOrder(order);
+            newItem.setProduct(product);
+            newItem.setQuantity(it.quantity);
+            newItem.setPrice(product.getPrice());
+
+            order.getItems().add(newItem);
+
+            BigDecimal subtotal = product.getPrice().multiply(BigDecimal.valueOf(it.quantity));
+            total = total.add(subtotal);
+
+            productDetails.add(Map.of(
+                    "productName", product.getName(),
+                    "price", product.getPrice(),
+                    "quantity", it.quantity,
+                    "subtotal", subtotal));
+        }
+
+        // Update order total
+        order.setTotal(total);
+
+        // Save updated order
+        Order savedOrder = orderRepo.save(order);
+
+        // Response
+        return Map.of(
+                "orderId", savedOrder.getId(),
+                "message", "Order updated successfully!",
+                "total", total,
+                "products", productDetails);
+    }
+
 }
