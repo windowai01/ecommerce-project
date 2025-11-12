@@ -73,13 +73,13 @@ public class OrderService {
     }
 
     // GET ONE ORDER
-    public Optional<Order> getOrderById(Long id) {
+    public Optional<Order> getOrderById(int id) {
         return orderRepo.findById(id);
     }
 
     // DELETE ORDER
     @Transactional
-    public boolean deleteOrder(Long id) {
+    public boolean deleteOrder(int id) {
         if (orderRepo.existsById(id)) {
             orderRepo.deleteById(id);
             return true;
@@ -89,7 +89,7 @@ public class OrderService {
 
     // UPDATE ORDER
     @Transactional
-    public Map<String, Object> updateOrderWithDetails(Long id, OrderRequest req) {
+    public Map<String, Object> updateOrderWithDetails(int id, OrderRequest req) {
         // Find the order
         Order order = orderRepo.findById(id)
                 .orElseThrow(() -> new RuntimeException("Order not found with id: " + id));

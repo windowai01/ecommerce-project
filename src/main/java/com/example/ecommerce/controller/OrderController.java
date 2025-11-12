@@ -18,7 +18,7 @@ public class OrderController {
   }
 
   // ✅ CREATE ORDER (now returns Map)
-  @PostMapping
+  @PostMapping("/add")
   public ResponseEntity<Map<String, Object>> createOrder(@RequestBody OrderRequest request) {
     Map<String, Object> response = orderService.createOrderWithDetails(request);
     return ResponseEntity.ok(response);
@@ -32,7 +32,7 @@ public class OrderController {
 
   // ✅ GET ONE ORDER
   @GetMapping("/{id}")
-  public ResponseEntity<?> getOrderById(@PathVariable Long id) {
+  public ResponseEntity<?> getOrderById(@PathVariable int id) {
     return orderService.getOrderById(id)
         .<ResponseEntity<?>>map(ResponseEntity::ok)
         .orElse(ResponseEntity.notFound().build());
@@ -40,7 +40,7 @@ public class OrderController {
 
   // ✅ DELETE ORDER
   @DeleteMapping("/{id}")
-  public ResponseEntity<Map<String, Object>> deleteOrder(@PathVariable Long id) {
+  public ResponseEntity<Map<String, Object>> deleteOrder(@PathVariable int id) {
     boolean deleted = orderService.deleteOrder(id);
     if (deleted) {
       return ResponseEntity.ok(Map.of("message", "Order deleted successfully!"));
@@ -51,7 +51,7 @@ public class OrderController {
 
   // UPDATE ORDER
   @PutMapping("/update/{id}")
-  public ResponseEntity<Map<String, Object>> updateOrder(@PathVariable Long id, @RequestBody OrderRequest req) {
+  public ResponseEntity<Map<String, Object>> updateOrder(@PathVariable int id, @RequestBody OrderRequest req) {
     Map<String, Object> response = orderService.updateOrderWithDetails(id, req);
     return ResponseEntity.ok(response);
   }
