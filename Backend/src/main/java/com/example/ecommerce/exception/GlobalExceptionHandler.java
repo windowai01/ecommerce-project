@@ -24,4 +24,5 @@ public class GlobalExceptionHandler {
                 .collect(Collectors.joining(", "));
         return ResponseEntity.badRequest().body(Map.of("error", msg));
     }
+
 }

@@ -18,8 +18,15 @@ public class CloudinaryService {
                 "cloud_name", "djxz7a3fo",
                 "api_key", "979535181455772",
                 "api_secret", "41ragRDQqL3RhrlLeM5lojZNO6Q",
-                "secure", true
-        ));
+                "secure", true));
+    }
+
+    public void deleteImage(String publicId) {
+        try {
+            cloudinary.uploader().destroy(publicId, ObjectUtils.emptyMap());
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to delete image: " + e.getMessage());
+        }
     }
 
     public String uploadImage(File file) throws IOException {

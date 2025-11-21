@@ -1,11 +1,9 @@
 package com.example.ecommerce.entity;
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-
+import lombok.AllArgsConstructor;
 import java.math.BigDecimal;
 
 @Entity
@@ -14,24 +12,30 @@ import java.math.BigDecimal;
 @NoArgsConstructor
 @AllArgsConstructor
 public class OrderItem {
-
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   private Long id;
 
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "order_id", nullable = false)
-  @JsonIgnoreProperties({ "hibernateLazyInitializer", "handler" })
   private Order order;
 
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "product_id", nullable = false)
-  @JsonIgnoreProperties({ "hibernateLazyInitializer", "handler" })
   private Product product;
 
   @Column(nullable = false)
-  private Integer quantity;
+  private int quantity;
 
-  @Column(nullable = false, precision = 10, scale = 2)
-  private BigDecimal price;
+  @Column(nullable = false)
+  private BigDecimal price; // Price at time of order
+
+  @Column(name = "created_at", nullable = false, updatable = false, insertable = false)
+  private java.time.LocalDateTime createdAt;
+
+  @PrePersist
+  protected void onCreate() {
+    createdAt = java.time.LocalDateTime.now();
+  }
+
 }

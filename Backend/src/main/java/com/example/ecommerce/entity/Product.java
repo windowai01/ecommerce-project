@@ -10,9 +10,12 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "products")
@@ -26,33 +29,56 @@ public class Product {
     private Long id;
 
     @NotBlank(message = "Product name is required")
-    @Size(max = 200, message = "Product name must be less than 200 characters")
+    @Size(max = 200)
     @Column(nullable = false, length = 200)
     private String name;
 
-    @Size(max = 1000, message = "Description must be less than 1000 characters")
-    @Column(length = 1000)
+    @Size(max = 2000)
+    @Column(length = 2000)
     private String description;
 
     @NotNull(message = "Price is required")
-    @DecimalMin(value = "0.0", inclusive = false, message = "Price must be greater than 0")
+    @DecimalMin(value = "0.0", inclusive = false)
     @Column(nullable = false, precision = 10, scale = 2)
     private BigDecimal price;
 
+    @Column(precision = 10, scale = 2)
+    private BigDecimal originalPrice;
+
     @NotNull(message = "Stock quantity is required")
     @Column(nullable = false)
-    private Integer stockQuantity = 0;
+    private Integer quantity = 0;
 
-    @Size(max = 100, message = "Category must be less than 100 characters")
-    @Column(length = 100)
-    private String category;
-
-    @Size(max = 500, message = "Image URL must be less than 500 characters")
     @Column(length = 500)
-    private String imageUrl;
+    private String image;
+
+    // Multiple images stored as comma-separated URLs
+    @Column(length = 2000)
+    private String images;
+
+    @Column(length = 100)
+    private String brand;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "category_id")
+    private Category category;
+
+    // Calculated average rating
+    @Column(precision = 2, scale = 1)
+    private BigDecimal averageRating = BigDecimal.ZERO;
+
+    @Column(nullable = false)
+    private Integer reviewCount = 0;
 
     @Column(nullable = false)
     private Boolean active = true;
+
+    @Column(nullable = false)
+    private Boolean featured = false; // For featured products section
+
+    @OneToMany(mappedBy = "product", cascade = CascadeType.ALL)
+    @JsonIgnore
+    private List<Review> reviews = new ArrayList<>();
 
     @CreationTimestamp
     @Column(nullable = false, updatable = false)
@@ -61,4 +87,39 @@ public class Product {
     @UpdateTimestamp
     @Column(nullable = false)
     private LocalDateTime updatedAt;
+
+    // Helper to get images as list
+    public List<String> getImagesList() {
+        if (images == null || images.isEmpty()) {
+            return image != null ? List.of(image) : new ArrayList<>();
+        }
+        return List.of(images.split(","));
+    }
+
+    // Helper to calculate discount percentage
+    public Integer getDiscountPercentage() {
+        if (originalPrice != null && originalPrice.compareTo(price) > 0) {
+            BigDecimal discount = originalPrice.subtract(price);
+            return discount.multiply(BigDecimal.valueOf(100))
+                    .divide(originalPrice, 0, java.math.RoundingMode.HALF_UP)
+                    .intValue();
+        }
+        return 0;
+    }
+
+    public void setAverageRating(BigDecimal rating) { // ← Added
+        this.averageRating = rating;
+    }
+
+    public void setReviewCount(Integer count) { // ← Added
+        this.reviewCount = count;
+    }
+
+    public BigDecimal getOriginalPrice() { // ← Added for clarity
+        return originalPrice;
+    }
+
+    public BigDecimal getAverageRating() { // ← Added for clarity
+        return averageRating;
+    }
 }

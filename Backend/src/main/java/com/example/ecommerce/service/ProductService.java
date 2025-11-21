@@ -5,7 +5,9 @@ import com.example.ecommerce.repository.ProductRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.File;
 import java.util.List;
 
 @Service
@@ -15,7 +17,22 @@ public class ProductService {
     @Autowired
     private ProductRepository productRepository;
 
-    public Product createProduct(Product product) {
+    @Autowired
+    private CloudinaryService cloudinaryService;
+
+    public Product createProduct(Product product, MultipartFile image) {
+        try {
+            if (image != null && !image.isEmpty()) {
+                // Convert MultipartFile to File and upload to Cloudinary
+                File tempFile = File.createTempFile("upload", image.getOriginalFilename());
+                image.transferTo(tempFile);
+                String imageUrl = cloudinaryService.uploadImage(tempFile);
+                product.setImage(imageUrl);
+                tempFile.delete();
+            }
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to upload image: " + e.getMessage());
+        }
         return productRepository.save(product);
     }
 
@@ -28,33 +45,39 @@ public class ProductService {
         return productRepository.findAll();
     }
 
-    public List<Product> getProductsByCategory(String category) {
-        return productRepository.findByCategory(category);
-    }
-
-    public Product updateProduct(Long id, Product newData) {
+    public Product updateProduct(Long id, Product newData, MultipartFile image) {
         Product product = getProductById(id);
 
-        if (newData.getName() != null) {
+        if (newData.getName() != null && !newData.getName().isEmpty()) {
             product.setName(newData.getName());
         }
-        if (newData.getDescription() != null) {
+        if (newData.getDescription() != null && !newData.getDescription().isEmpty()) {
             product.setDescription(newData.getDescription());
         }
         if (newData.getPrice() != null) {
             product.setPrice(newData.getPrice());
         }
-        if (newData.getStockQuantity() != null) { // Fixed: use stockQuantity
-            product.setStockQuantity(newData.getStockQuantity());
+        if (newData.getQuantity() != null) {
+            product.setQuantity(newData.getQuantity());
         }
-        if (newData.getCategory() != null) {
-            product.setCategory(newData.getCategory());
-        }
-        if (newData.getImageUrl() != null) {
-            product.setImageUrl(newData.getImageUrl());
-        }
-        if (newData.getActive() != null) {
-            product.setActive(newData.getActive());
+
+        // Handle image upload if provided
+        try {
+            if (image != null && !image.isEmpty()) {
+                // Delete old image from Cloudinary if it exists
+                if (product.getImage() != null && !product.getImage().isEmpty()) {
+                    cloudinaryService.deleteImage(product.getImage());
+                }
+
+                // Upload new image
+                File tempFile = File.createTempFile("upload", image.getOriginalFilename());
+                image.transferTo(tempFile);
+                String imageUrl = cloudinaryService.uploadImage(tempFile);
+                product.setImage(imageUrl);
+                tempFile.delete();
+            }
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to upload image: " + e.getMessage());
         }
 
         return productRepository.save(product);
