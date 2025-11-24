@@ -77,11 +77,11 @@ export const COUPON_API = {
   DELETE: (id) => `${API_BASE_URL}/coupons/${id}`,
 };
 
-// Payment APIs
+// Payment APIs (FREE - Mock Payment)
 export const PAYMENT_API = {
-  CREATE_ORDER: `${API_BASE_URL}/payment/create-order`,
-  VERIFY: `${API_BASE_URL}/payment/verify`,
-  COD: `${API_BASE_URL}/payment/cod`,
+  PROCESS: `${API_BASE_URL}/payment/process`,
+  STATUS: (orderId) => `${API_BASE_URL}/payment/status/${orderId}`,
+  REFUND: (orderId) => `${API_BASE_URL}/payment/refund/${orderId}`,
 };
 
 // Admin Dashboard APIs
@@ -92,26 +92,35 @@ export const DASHBOARD_API = {
   RECENT_ORDERS: `${API_BASE_URL}/admin/dashboard/recent-orders`,
 };
 
-// Razorpay Key (public key - safe to expose)
-export const RAZORPAY_KEY_ID = 'rzp_test_your_key_id';
-
-// Helper function
+// Helper function - Get Auth Header
 export const getAuthHeader = () => {
   const token = localStorage.getItem('token');
   return token ? { Authorization: `Bearer ${token}` } : {};
 };
 
+// API Request Helper
 export const apiRequest = async (url, options = {}) => {
   const defaultHeaders = { ...getAuthHeader() };
+  
   if (!(options.body instanceof FormData)) {
     defaultHeaders['Content-Type'] = 'application/json';
   }
-  const config = { ...options, headers: { ...defaultHeaders, ...options.headers } };
+  
+  const config = {
+    ...options,
+    headers: {
+      ...defaultHeaders,
+      ...options.headers,
+    },
+  };
+
   const response = await fetch(url, config);
+  
   if (!response.ok) {
     const error = await response.json().catch(() => ({ message: 'Request failed' }));
     throw new Error(error.message || error.error || 'Request failed');
   }
+
   return response.json();
 };
 
