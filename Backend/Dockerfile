@@ -1,5 +1,5 @@
 # ============================================
-# 🚀 Multi-stage Dockerfile for Spring Boot
+# 🚀 Multi-stage Dockerfile for Spring Boot (FIXED)
 # ============================================
 
 # Stage 1: Build with Maven
@@ -29,5 +29,5 @@ EXPOSE 8080
 # Set production profile
 ENV SPRING_PROFILES_ACTIVE=prod
 
-# Run the application
-ENTRYPOINT ["java", "-Dserver.port=${PORT:-8080}", "-jar", "app.jar"]
+# ✅ FIXED: Use CMD with shell form to properly expand $PORT variable
+CMD java -Dserver.port=$PORT -Dspring.profiles.active=prod -jar app.jar
